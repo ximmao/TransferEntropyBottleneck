@@ -1,4 +1,4 @@
-# TE
+# Transfer Entropy Bottleneck
 
 ### dataset 
 
