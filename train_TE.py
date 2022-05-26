@@ -11,7 +11,6 @@ import argparse
 import pdb
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from torch.nn import parallel
@@ -21,7 +20,6 @@ import torchvision
 import matplotlib.pyplot as plt
 import matplotlib
 plt.rcParams['axes.xmargin'] = 0
-import tqdm
 
 sys.path.append('../')
 from utils import print_network, get_plotting_func, onehot

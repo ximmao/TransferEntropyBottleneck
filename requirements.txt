@@ -1,0 +1,7 @@
+python=3.7
+torch==1.8.1
+torchvision==0.10.0
+matplotlib
+numpy
+scipy
+pyyaml

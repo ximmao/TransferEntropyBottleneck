@@ -5,7 +5,6 @@ from typing_extensions import Literal
 import torch
 import torch.nn as nn
 
-import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
