@@ -1,5 +1,18 @@
 # Transfer Entropy Bottleneck
 
+### dependency
+
+Code is implemented with `python3.7` and `pytorch 1.8.1`, it also require torchvision for its pretrained network. Please see the list of library dependencies:
+```
+python=3.7
+torch==1.8.1
+torchvision==0.10.0
+matplotlib
+numpy
+scipy
+pyyaml
+```
+
 ### dataset 
 
 Dataset __rotatingMNIST__ and __needle in the haystack__ can be generated via scripts under /dataset/creation_scripts. Upon successful generation, they need to be put in `dataset/data`. You should expect to see the following dir tree
