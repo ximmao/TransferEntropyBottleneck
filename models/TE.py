@@ -1,5 +1,5 @@
 from .misc import init_weight, Detach
-from .VAEs import VAEModel, VAEModel_BE, CVAEModel_BE
+from .VAEs import VAEModel, VAEModel_BE, CVAEModel
 import numpy as np
 import torch
 import torch.nn as nn
@@ -10,17 +10,16 @@ from TE.utils import onehot
 class TEModel(nn.Module):
     """
     Y_module: set to none to initialise a Y_module, otherwise you can pass a Y_module
-    share_backwards_enc: 0 if we dont do any sharing, 1 if we initialize the variational backwards encoder to be the Y one, 2 if we take the Y encoder and do not train it
-    share_dec: same as share_backwards_enc but for the decoder
+    share_dec: 0 if we dont do any sharing, 1 if we initialize the variational decoder to be the Y one, 2 if we take the Y decoder and do not train it
     sample_c: whether the model uses the mean and variance of c, or just sampled c. Not for latent_type = 'concat'
     NOTE: key word arguments for initialization take priority over the arg dicts
     """
 
-    def __init__(self, latent_dim=32, Y_module_type=VAEModel_BE, X_module_type=CVAEModel_BE,
+    def __init__(self, latent_dim=32, Y_module_type=VAEModel_BE, X_module_type=CVAEModel,
                 Y_module_args_dict = {'nc':3, 'ndf':64, 'latent_dim':32, 'output_dim':(32, 32),'oc':3, 'dec_multiplier':(2, 2), 'dec_pad':(0,0), 'dec_out_act':'none', 'encoder_type': 'lstm_resnet18_2d','is_2d':True,'output_categorical': False,'teb0_nocontext_mlp_conditionals':False},
-                X_module_args_dict = {'input_dim':8, 'ndf':64, 'latent_dim':32, 'output_dim':(32, 32),'oc':3, 'dec_multiplier':(2, 2), 'dec_pad':(0,0), 'dec_out_act':'none', 'backwards_network' : 'resnet18_2d','latent_type':'concat','sample_c': True, 'encoder_type':'lstm_resnet18_2d','is_2d':True,'mlp_conditionals':False, 'backwards_from_vector_dim' : 0, 'output_categorical': False,'teb0_nocontext_mlp_conditionals':False},
+                X_module_args_dict = {'input_dim':8, 'ndf':64, 'latent_dim':32, 'output_dim':(32, 32),'oc':3, 'dec_multiplier':(2, 2), 'dec_pad':(0,0), 'dec_out_act':'none', 'latent_type':'concat','sample_c': True, 'encoder_type':'lstm_resnet18_2d','is_2d':True,'mlp_conditionals':False, 'output_categorical': False,'teb0_nocontext_mlp_conditionals':False},
                 Y_module: Optional[Type[Union[ VAEModel, VAEModel_BE]]] = None, 
-                share_backwards_enc: int = 0, share_dec: int = 0, x_init_variance=.0000001, x_init_mean_zero = True, output_categorical = False, teb0_nocontext_mlp_conditionals=False, **kwargs):
+                share_dec: int = 0, x_init_variance=.0000001, x_init_mean_zero = True, output_categorical = False, teb0_nocontext_mlp_conditionals=False, **kwargs):
         super().__init__()
         # overwrite the dict of items for Y module and X module.
         argdict = dict(locals(),**kwargs)
@@ -34,10 +33,8 @@ class TEModel(nn.Module):
         
         self.teb0_nocontext_mlp_conditionals = teb0_nocontext_mlp_conditionals
         if teb0_nocontext_mlp_conditionals:
-            share_backwards_enc = 0
             share_dec = 0
         self.output_categorical = output_categorical
-        self.share_backwards_enc = share_backwards_enc
         self.share_dec = share_dec
         self.latent_type = X_module_args_dict['latent_type']
         sample_c = X_module_args_dict['sample_c']
@@ -107,26 +104,7 @@ class TEModel(nn.Module):
                             self.X_module.encoder.l2.bias[:size_mean] = 0.
                             self.X_module.encoder.l2.weight[:,:] = 0.
             
-        # the backwards encoder in the variational module
         with torch.no_grad():
-            if self.share_backwards_enc == 0:
-                pass
-            elif self.share_backwards_enc == 1:
-                if self.Y_module_type == VAEModel:
-                    if 'lstm' in self.Y_module_args_dict['encoder_type']:
-                        self.X_module.backwards_enc.load_state_dict(self.Y_module.encoder.enc.state_dict())
-                    else:
-                        self.X_module.backwards_enc.load_state_dict(self.Y_module.encoder.state_dict())
-                elif self.Y_module_type == VAEModel_BE:
-                    self.X_module.backwards_enc.load_state_dict(self.Y_module.backwards_enc.state_dict())
-            elif self.share_backwards_enc == 2:
-                if self.Y_module_type == VAEModel:
-                    if 'lstm' in self.Y_module_args_dict['encoder_type']:
-                        self.X_module.backwards_enc= nn.Sequential(self.Y_module.encoder.enc,Detach())
-                    else:
-                        self.X_module.backwards_enc = nn.Sequential(self.Y_module.encoder,Detach())
-                elif self.Y_module_type == VAEModel_BE:
-                    self.X_module.backwards_enc = nn.Sequential(self.Y_module.backwards_enc,Detach())
 
             # the decoder in the variational module
             if self.share_dec == 0:
@@ -171,10 +149,7 @@ class TEModel(nn.Module):
                 
             _y_sample_params = c
 
-        if self.X_module.backwards_from_vector_dim == self.X_module.input_dim:
-            assert y_next_label is not None
-            zc, y_reconstructed, kl_div, z_params = self.X_module(x, onehot(y_next_label,self.X_module.input_dim), c, deterministic=deterministic)
-        elif self.X_module.output_categorical:
+        if self.X_module.output_categorical:
             assert y_next_label is not None
             zc, y_reconstructed, kl_div, z_params = self.X_module(x, y_next_label, c, deterministic=deterministic)
         else:

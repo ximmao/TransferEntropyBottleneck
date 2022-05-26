@@ -150,23 +150,17 @@ class VAEModel_BE(VAEModel_abs):
             y_out = self.decoder(z)
         return z, y_out, kl_div, (mu,logvar)
 
-class CVAEModel_BE(VAEModel_abs):
-    """
-    NOTE backwards_from_vector_dim: if the value is > 0 then we assume that instead of the image, we backwards encode with an mlp from a vector of dimension backwards_from_vector_dim
-    """
+class CVAEModel(VAEModel_abs):
     def __init__(self, input_dim=1, ndf=64, latent_dim=32, output_dim=(32,32), bilstm=False,
                  oc=1, dec_multiplier=(2, 2), dec_pad=(0,0), dec_out_act='none', 
-                 is_2d=True, backwards_network = 'resnet18_2d',
-                 latent_type: Literal['add','concat'] = 'concat',
+                 is_2d=True, latent_type: Literal['add','concat'] = 'concat',
                  sample_c = True, encoder_type = 'lstm_resnet18_2d', 
-                 mlp_conditionals=False, backwards_from_vector_dim = 0, 
-                 output_categorical = False, teb0_nocontext_mlp_conditionals=False, **kwargs):
+                 mlp_conditionals=False, output_categorical = False, teb0_nocontext_mlp_conditionals=False, **kwargs):
         super().__init__()
 
         self.latent_type = latent_type
         self.input_dim = input_dim
         self.mlp_conditionals = mlp_conditionals
-        self.backwards_from_vector_dim = backwards_from_vector_dim
         self.bilstm =bilstm
         self.output_categorical = output_categorical
         self.teb0_nocontext_mlp_conditionals = teb0_nocontext_mlp_conditionals
@@ -223,24 +217,13 @@ class CVAEModel_BE(VAEModel_abs):
                                                 act_output=dec_out_act)
             self.decoder = decoder_func()
 
-        if backwards_from_vector_dim > 0:
-            self.backwards_enc = MLP(backwards_from_vector_dim,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
-        elif output_categorical:
-            self.backwards_enc = nn.Sequential(nn.Embedding(input_dim,latent_dim),MLP(latent_dim,latent_dim,latent_dim*2))
-        else:
-            self.backwards_enc,_ = select_resnet(backwards_network,latent_dim*2,nc=oc)
-
         if mlp_conditionals:
             if sample_c:
-                self.backwards_enc_mlp = MLP(latent_dim*3,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
                 self.encoder_mlp = MLP(latent_dim*3,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
             elif teb0_nocontext_mlp_conditionals:
-                # backwards enc not used
-                self.backwards_enc_mlp = MLP(latent_dim*4,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
                 # first half of logvar is logvar, second half is an additional ouput for conditioning
                 self.encoder_mlp = MLP(latent_dim*3,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
             else:
-                self.backwards_enc_mlp = MLP(latent_dim*4,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
                 self.encoder_mlp = MLP(latent_dim*4,latent_dim,latent_dim*2,p_dropout=0, hidden_activation=nn.ReLU())
         
     def forward(self, x, y_next, c = None, y = None, sequential = False, deterministic=False):
@@ -291,20 +274,7 @@ class CVAEModel_BE(VAEModel_abs):
                 raise 'its a bug that you got here'
 
         if not deterministic and not self.teb0_nocontext_mlp_conditionals:
-            # get backwards encoding for kl div:
-            seq_len_next = y_next.size()[1]
-            assert seq_len_next == 1
-            y_next = y_next.squeeze(1)
-            if not self.mlp_conditionals:
-                back = self.backwards_enc(y_next)
-            else:
-                back = self.backwards_enc(y_next)
-                if self.sample_c:
-                    back = self.backwards_enc_mlp(torch.cat([back,c],dim=-1))
-                else:
-                    back = self.backwards_enc_mlp(torch.cat([back,c_mu,c_logvar],dim=-1))
-
-            mu_back, logvar_back = back.chunk(2, dim=-1)
+            raise ValueError()
         
         z = self.posterior_sample(torch.randn_like(logvar), mu, logvar)
         z = z.view(batch_size, -1, 1, 1)
@@ -334,7 +304,5 @@ class CVAEModel_BE(VAEModel_abs):
         
         if deterministic or self.teb0_nocontext_mlp_conditionals:
             kl_div = torch.tensor(0.0)
-        else:
-            kl_div = self.analytical_kl(mu, logvar, mu_back, logvar_back)
 
         return zc, out, kl_div, (mu,logvar)

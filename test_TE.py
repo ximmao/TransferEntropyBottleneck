@@ -28,7 +28,7 @@ sys.path.append('../')
 from utils import print_network, get_plotting_func, onehot
 from utils import mseloss_to_loglikelyhood, TargetLoss, r2_loss
 from utils import str2bool
-from models import VAEModel, VAEModel_BE, CVAEModel_BE, TEModel, ColorClassifier
+from models import VAEModel, VAEModel_BE, CVAEModel, TEModel, ColorClassifier
 from models.misc import init_weight
 from yaml_config import getStructuredArgs
 import warnings
@@ -362,7 +362,7 @@ if __name__ == '__main__':
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
         print('test seed', args.seed)
-        TEmodel, test_loss, test_log = main_TE(args)
+        TE_model, test_loss, test_log = main_TE(args)
         total_corrected += test_log[-1]
         print(f'Testing loss on TE model is {test_loss}')
     print('accuracy across seed list', 100.*np.mean(total_corrected))

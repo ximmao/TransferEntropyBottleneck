@@ -2,7 +2,7 @@ import yaml
 import os
 import copy
 from dataset import *
-from models import VAEModel, VAEModel_BE, CVAEModel_BE, TEModel
+from models import VAEModel, VAEModel_BE, CVAEModel, TEModel
 
 class structArgs():
     def __init__(self, a_args):
@@ -43,8 +43,8 @@ def getStructuredArgs(yaml_file, argparse_args):
     else:
         raise ValueError()
 
-    if mod_yaml['X_module_type'] == 'CVAEModel_BE':
-        custArgs.X_module_type = CVAEModel_BE
+    if mod_yaml['X_module_type'] == 'CVAEModel':
+        custArgs.X_module_type = CVAEModel
     else:
         raise ValueError()
     

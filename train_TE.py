@@ -25,7 +25,7 @@ sys.path.append('../')
 from utils import print_network, get_plotting_func, onehot
 from utils import mseloss_to_loglikelyhood, TargetLoss, r2_loss
 from utils import str2bool
-from models import VAEModel, VAEModel_BE, CVAEModel_BE, TEModel, ColorClassifier
+from models import VAEModel, VAEModel_BE, CVAEModel, TEModel, ColorClassifier
 from models.misc import init_weight
 from yaml_config import getStructuredArgs
 import warnings
@@ -905,12 +905,12 @@ if __name__ == '__main__':
         Y_module,best_val_epoch_y,best_val_y,train_log_y,val_log_y = main_Y(args)
         print("Y_module Training is done, moving to training joint TE model",f'best validation loss is {best_val_y} on epoch {best_val_epoch_y}')
         args.Y_checkpoint = args.Y_epochs - 1
-        TEmodel, best_TE_ckpt, best_val,train_log,val_log = main_TE(args)
+        TE_model, best_TE_ckpt, best_val,train_log,val_log = main_TE(args)
         print(f'Training done, best validation loss is {best_val} on epoch {best_TE_ckpt}')
         if args.save:
             torch.save((best_val,train_log,val_log),f'{args.log_dir}/{args.exp_name}/TE_final_stats.pkl')
     else:
-        TEmodel, best_TE_ckpt,best_val,train_log,val_log = main_TE(args)
+        TE_model, best_TE_ckpt,best_val,train_log,val_log = main_TE(args)
         print(f'Training done, best validation loss is {best_val} on epoch {best_TE_ckpt}')
         if args.save:
             torch.save((best_val,train_log,val_log),f'{args.log_dir}/{args.exp_name}/TE_final_stats.pkl')

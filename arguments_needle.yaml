@@ -26,18 +26,16 @@ general_config:
 model_config:
   TE_model_exclu:
     latent_dim: 128
-    share_backwards_enc: 1 # 0 if we dont do any sharing, 1 if we initialize the variational backwards encoder to be the Y one, 2 if we take the Y encoder and do not train it
     share_dec: 1 # 0 if we dont do any sharing, 1 if we initialize the decoder to be the Y one, 2 if we take the Y decoder and do not train it
     x_init_variance: .0000001
     dec_out_act: none
-  X_module_type: CVAEModel_BE
+  X_module_type: CVAEModel
   X_module_args:
     ndf: 64
     dec_out_act: none
     latent_type: add # sets how the c and z|x are combined to the latent for the TE model
     mlp_conditionals: True # conditions the X_module encoder and backwards encoder with an mlp taking c also as input
     sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
-    backwards_from_vector_dim: 0 #0 or num_classes # if the value is > 0 then we assume that instead of the image, we backwards encode with an mlp from a vector of dimension backwards_from_vector_dim
   Y_module_type: VAEModel_BE
   Y_module_args:
     ndf: 64
