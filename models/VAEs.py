@@ -272,9 +272,6 @@ class CVAEModel(VAEModel_abs):
                 mu = mu + c_mu
             else:
                 raise 'its a bug that you got here'
-
-        if not deterministic and not self.teb0_nocontext_mlp_conditionals:
-            raise ValueError()
         
         z = self.posterior_sample(torch.randn_like(logvar), mu, logvar)
         z = z.view(batch_size, -1, 1, 1)
@@ -302,7 +299,6 @@ class CVAEModel(VAEModel_abs):
         else:
             out = self.decoder(zc)
         
-        if deterministic or self.teb0_nocontext_mlp_conditionals:
-            kl_div = torch.tensor(0.0)
+        kl_div = torch.tensor(0.0)
 
         return zc, out, kl_div, (mu,logvar)

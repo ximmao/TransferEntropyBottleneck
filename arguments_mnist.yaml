@@ -18,7 +18,7 @@ general_config:
 
   presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
   loss_type: gaussian # list with entry for each output channel. See TargetLoss class for documentation.
-  true_latent_loss: true # this replaced the kl divergence to the backwards encoder with kl divergence to the Y modules computed latent. This is only valid when the latent probability space is shared between the Y module and TE model
+  true_latent_loss: true # this replaced the kl divergence to the Y modules computed latent. This is only valid when the latent probability space is shared between the Y module and TE model
   output_categorical: False # turns X module into classifier and Y module into class embedding
   deterministic_baseline: False
   color_clf: False
@@ -36,7 +36,7 @@ model_config:
     ndf: 64
     dec_out_act: none
     latent_type: add # sets how the c and z|x are combined to the latent for the TE model
-    mlp_conditionals: false # conditions the X_module encoder and backwards encoder with an mlp taking c also as input
+    mlp_conditionals: false # conditions the X_module encoder with an mlp taking c also as input
     sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
   Y_module_type: VAEModel_BE
   Y_module_args:

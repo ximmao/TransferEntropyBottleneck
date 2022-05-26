@@ -90,7 +90,7 @@ def getStructuredArgs(yaml_file, argparse_args):
     if dset_yaml['dataset_class'] == 'VariedRotatingDigitsOnlinegen':
         d_y_module_argu.update({'is_2d':True,'nc': 1, 'output_res' : 28, 'oc' : 1, 'encoder_type' : 'lstm_resnet18_2d'})
         d_x_module_argu.update({'is_2d':True,'input_dim': 10, 'output_res' : 28, 'oc' : 1,
-         'encoder_type' : 'lstm_embed' , 'backwards_network' : 'resnet18_2d',})
+         'encoder_type' : 'lstm_embed',})
     elif dset_yaml['dataset_class'] == 'ColoredBouncingBallsStackedOnlinegen':
         if dset_yaml['baseline_train']:
             new_nc_y = (int(dset_yaml['num_distractor']) + 1) * 3
@@ -99,7 +99,7 @@ def getStructuredArgs(yaml_file, argparse_args):
         new_nc_x = (int(dset_yaml['num_distractor']) + 1) * 3
         d_y_module_argu.update({'is_2d':True,'nc': new_nc_y, 'output_res' : 32, 'oc' : 3, 'encoder_type' : 'lstm_resnet18_2d'})
         d_x_module_argu.update({'is_2d':True,'input_dim': new_nc_x, 'output_res' : 32, 'oc' : 3,
-         'encoder_type' : 'lstm_resnet18_2d' , 'backwards_network' : 'resnet18_2d',})
+         'encoder_type' : 'lstm_resnet18_2d',})
     else:
         raise ValueError()
 

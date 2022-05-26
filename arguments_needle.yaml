@@ -34,7 +34,7 @@ model_config:
     ndf: 64
     dec_out_act: none
     latent_type: add # sets how the c and z|x are combined to the latent for the TE model
-    mlp_conditionals: True # conditions the X_module encoder and backwards encoder with an mlp taking c also as input
+    mlp_conditionals: True # conditions the X_module encoder with an mlp taking c also as input
     sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
   Y_module_type: VAEModel_BE
   Y_module_args:
