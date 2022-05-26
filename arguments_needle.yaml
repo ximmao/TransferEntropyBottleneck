@@ -1,0 +1,60 @@
+general_config:
+  exp_name: needle_bball
+  lr: .0001
+  weight_decay: 0.0
+  checkpoint_frequency: 5
+  validation_frequency: 2
+  plot_per_update_train: 10
+  plot_per_update_val: 5
+  batch_size:
+    train: 128
+    test: 1
+
+  # regarding loss_func
+  annealbeta: none
+  beta_Y: 1. # hyperparameter for loss trading of KL term. Y model
+  beta_TE: 100. #1 # hyperparameter for loss trading of KL term. TE model
+  presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
+  loss_type: binary # list with entry for each output channel. See TargetLoss class for documentation.
+  # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
+  true_latent_loss: True
+  output_categorical: False
+  deterministic_baseline: False
+  color_clf: True
+  teb0_nocontext_mlp_conditionals: True
+
+model_config:
+  TE_model_exclu:
+    latent_dim: 128
+    share_backwards_enc: 1 # 0 if we dont do any sharing, 1 if we initialize the variational backwards encoder to be the Y one, 2 if we take the Y encoder and do not train it
+    share_dec: 1 # 0 if we dont do any sharing, 1 if we initialize the decoder to be the Y one, 2 if we take the Y decoder and do not train it
+    x_init_variance: .0000001
+    dec_out_act: none
+  X_module_type: CVAEModel_BE
+  X_module_args:
+    ndf: 64
+    dec_out_act: none
+    latent_type: add # sets how the c and z|x are combined to the latent for the TE model
+    mlp_conditionals: True # conditions the X_module encoder and backwards encoder with an mlp taking c also as input
+    sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
+    backwards_from_vector_dim: 0 #0 or num_classes # if the value is > 0 then we assume that instead of the image, we backwards encode with an mlp from a vector of dimension backwards_from_vector_dim
+  Y_module_type: VAEModel_BE
+  Y_module_args:
+    ndf: 64
+    dec_out_act: none
+
+dataset_config:
+  dataset_class: ColoredBouncingBallsStackedOnlinegen
+  yp_window_len: 1
+  y_window_len: 3
+  x_window_len: 1
+  window_stride: 1
+  switch_probability: 0.5
+  switch_samples_per_sequence: 5
+  baseline_train: False
+  label_noise: 0.4
+  num_distractor: 5
+  data_path:
+    train: ./dataset/data/bball_data_noswitch_g1_3/train
+    valid: ./dataset/data/bball_data_noswitch_g1_3/valid
+    test: ./dataset/data/bball_data_noswitch_g1_3/test

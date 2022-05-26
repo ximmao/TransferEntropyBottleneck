@@ -1,0 +1,58 @@
+general_config:
+  exp_name: rotating_mnist
+  lr: .0001
+  weight_decay: 0.0
+  checkpoint_frequency: 5
+  validation_frequency: 2
+  plot_per_update_train: 10
+  plot_per_update_val: 5
+  batch_size:
+    train: 128
+    test: 1
+
+  # regarding loss_func
+  annealbeta: none # set beta_TE to decay from set multiple of beta_TE to beta_TE during training. can be set to "baclwards_<method>" to make beta increase.
+  beta_Y: 1. # hyperparameter for loss trading of KL term. Y model
+  # hyperparameter for loss trading of KL term. TE model. If beta is a list of length 2 and annealing is on, it interprets the first one as starting value, and second as end value
+  beta_TE: .2
+
+  presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
+  loss_type: gaussian # list with entry for each output channel. See TargetLoss class for documentation.
+  true_latent_loss: true # this replaced the kl divergence to the backwards encoder with kl divergence to the Y modules computed latent. This is only valid when the latent probability space is shared between the Y module and TE model
+  output_categorical: False # turns X module into classifier and Y module into class embedding
+  deterministic_baseline: False
+  color_clf: False
+  teb0_nocontext_mlp_conditionals: False
+  # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
+
+model_config:
+  TE_model_exclu:
+    latent_dim: 128
+    share_backwards_enc: 0 # 0 if we dont do any sharing, 1 if we initialize the variational backwards encoder to be the Y one, 2 if we take the Y encoder and do not train it
+    share_dec: 1 # 0 if we dont do any sharing, 1 if we initialize the decoder to be the Y one, 2 if we take the Y decoder and do not train it
+    x_init_variance: .0000001
+    dec_out_act: none
+  X_module_type: CVAEModel_BE
+  X_module_args:
+    ndf: 64
+    dec_out_act: none
+    latent_type: add # sets how the c and z|x are combined to the latent for the TE model
+    mlp_conditionals: false # conditions the X_module encoder and backwards encoder with an mlp taking c also as input
+    sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
+    backwards_from_vector_dim: 0 #0 or num_classes # if the value is > 0 then we assume that instead of the image, we backwards encode with an mlp from a vector of dimension backwards_from_vector_dim
+  Y_module_type: VAEModel_BE
+  Y_module_args:
+    ndf: 64
+    dec_out_act: none 
+
+dataset_config:
+  dataset_class: VariedRotatingDigitsOnlinegen
+  yp_window_len: 1
+  y_window_len: 2
+  x_window_len: 1
+  window_stride: 1
+  switch_probability: .5
+  data_path:
+    train: ./dataset/data/rdigit_data_noswitch/train
+    valid: ./dataset/data/rdigit_data_noswitch/valid
+    test: ./dataset/data/rdigit_data_noswitch/test
