@@ -374,6 +374,7 @@ def train_TE(args, data_loader, model, optimizer, epoch, X_at_train=True, Y_at_t
             stats_dict.update({'mnist_accuracy':mnist_accuracy})
         if args.color_clf:
             stats_dict.update({'color_accuracy':color_accuracy})
+        torch.save(stats_dict,f'{args.log_dir}/{args.exp_name}/TE_module_Info_train_stats_{epoch}.pkl')
     if args.color_clf:
         print(f'train color accuracy is {100.*np.mean(color_accuracy)} %')    
 
