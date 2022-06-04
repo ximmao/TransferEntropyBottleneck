@@ -141,6 +141,17 @@ def getStructuredArgs(yaml_file, argparse_args):
     d_te_module_argu = {'Y_module_args_dict': d_y_module_argu,
                         'X_module_args_dict': d_x_module_argu}
     d_te_module_argu.update(mod_yaml['TE_model_exclu'])
+    if mod_yaml['Y_module_type'] == 'VAEModel':
+        d_te_module_argu.Y_module_type = VAEModel
+    elif mod_yaml['Y_module_type'] == 'VAEModel_BE':
+        d_te_module_argu.Y_module_type = VAEModel_BE
+    else:
+        raise ValueError()
+
+    if mod_yaml['X_module_type'] == 'CVAEModel':
+        d_te_module_argu.X_module_type = CVAEModel
+    else:
+        raise ValueError()
     custArgs.TE_module_args_dict = d_te_module_argu
 
     del load_dict
