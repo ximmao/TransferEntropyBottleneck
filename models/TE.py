@@ -158,7 +158,7 @@ class TEModel(nn.Module):
         if deterministic:
             I_z_x_given_c = torch.tensor(0.0)
         elif self.teb0_nocontext_mlp_conditionals:
-            actual_c_logvar,_ = c_logvar.chunk(2, dim=-1)
+            actual_c_logvar,_ = _y_sample_params[1].chunk(2, dim=-1)
             I_z_x_given_c = self.X_module.analytical_kl(*z_params, c_mu, actual_c_logvar, reduction= 'mean')
         else:
             I_z_x_given_c = self.X_module.analytical_kl(*z_params, *_y_sample_params, reduction= 'mean')     

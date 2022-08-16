@@ -172,6 +172,32 @@ class LSTM_Encoder(nn.Module):
         s = 2 if self.bidirectional else 1 
         return (torch.zeros(self.num_layers*s, batch_size, self.hidden_size), torch.zeros(self.num_layers*s, batch_size, self.hidden_size))
 
+class VectorField(nn.Module):
+    def __init__(self, latent_dim, hidden_dim=50):
+        super().__init__()
+        self.model = nn.Sequential(
+                      nn.Linear(atent_dim, hidden_dim),
+                      nn.ELU(),
+                      nn.Linear(hidden_dim, hidden_dim),
+                      nn.ELU(),
+                      nn.Linear(hidden_dim, atent_dim))
+
+    def forward(self, t, x):
+        return self.model(x)
+
+class VFDecoder(nn.Module):
+    def __init__(self, state_dim, latent_dim, hidden_dim=50):
+        super().__init__()
+        self.model = nn.Sequential(
+                nn.Linear(latent_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, state_dim))
+
+    def forward(self, x):
+        return self.model(x)        
+
 def select_resnet(network, output_dim=128, nc =3, track_running_stats=True):
     # select 2d resnet from torchvision, for TE_var models. note this resnet has fc layer. 
     # Note input channels is 3, to change it, reset model.conv1 to what you want eg: model.conv1 = nn.Conv2d(input_channels, model.inplanes, kernel_size=7, stride=2, padding=3,bias=True)
