@@ -2,7 +2,7 @@
 
 ### dependency
 
-Code is implemented with `python3.7` and `pytorch 1.8.1`, it also require torchvision for its pretrained network. Please see the list of library dependencies:
+Code is implemented with `python3.7` and `pytorch 1.8.1`, it also require torchvision for its pretrained network. To run 1d experiment, torchdiffeq is required. Please see the list of library dependencies:
 ```
 python=3.7
 torch==1.8.1
@@ -11,11 +11,12 @@ matplotlib
 numpy
 scipy
 pyyaml
+torchdiffeq
 ```
 
 ### dataset 
 
-Dataset __rotatingMNIST__ and __needle in the haystack__ can be generated via scripts under /dataset/creation_scripts. Upon successful generation, they need to be put in `dataset/data`. You should expect to see the following dir tree
+Dataset __rotatingMNIST__, __needle in the haystack__ and __ multi-component sinusoids__ can be generated via scripts under /dataset/creation_scripts. Upon successful generation, they need to be put in `dataset/data`. You should expect to see the following dir tree
 
 ```
 dataset
@@ -37,16 +38,23 @@ dataset
 |   |   └───train
 |   |   └───valid
 |   |   └───test
+|   |
+|   └───fwaves_data_switch_0p5_multi
+|   |   |
+|   |   └───train
+|   |   └───valid
+|   |   └───test
 | 
 └───creation_scripts
 |   create_ccballs_needle.py
 |   create_vrdigits.py
+|   create_fcwaves_needle.py
 
 ```
 
 ### training & testing
 
-Use yaml config file `arguments_mnist.yaml` and `arguments_needle.yaml` to run rotating mnist and needle in the haystack experiments respectively
+Use yaml config file `arguments_mnist.yaml`, `arguments_needle.yaml` and `arguments_sinemul.yaml` to run rotating mnist, needle in the haystack and 1d time-series experiments respectively
 
 #### TEB
 
