@@ -16,12 +16,14 @@ general_config:
   beta_TE: 100. #1 # hyperparameter for loss trading of KL term. TE model
   presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
   loss_type: binary # list with entry for each output channel. See TargetLoss class for documentation.
-  # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
   true_latent_loss: True
   output_categorical: False
   deterministic_baseline: False
   color_clf: True
   teb0_nocontext_mlp_conditionals: True
+  use_neural_ode: False
+  output_seq_scalar: False
+  # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
 
 model_config:
   TE_model_exclu:

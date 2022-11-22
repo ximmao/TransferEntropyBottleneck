@@ -1,2 +1,4 @@
 from .rotating_digits import VariedRotatingDigitsOnlinegen
 from .bouncing_balls_p import ColoredBouncingBallsStackedOnlinegen
+# from .changing_waves import FrequencyChangingSinesOnlinegen
+from .changing_waves_m import FrequencyChangingSinesSummedMultiple

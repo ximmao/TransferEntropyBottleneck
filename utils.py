@@ -139,6 +139,16 @@ class TargetLoss(nn.Module):
                 loglikelihood = l1loss_to_loglikelyhood(loss,self.num_pixels,self.presumed_variance)
             else:
                 loglikelihood = -self.num_pixels*loss
+        elif len(target.shape) == 3 and target.shape[-1] == 1: # for sequential scalars
+            loss = self.loss_fn(output.clone(),target.clone())
+
+            #loglikelihood computation
+            if self.output_type == 'mse':
+                loglikelihood = mseloss_to_loglikelyhood(loss,self.num_pixels,self.presumed_variance)
+            elif self.output_type == 'l1':
+                loglikelihood = l1loss_to_loglikelyhood(loss,self.num_pixels,self.presumed_variance)
+            else:
+                loglikelihood = -self.num_pixels*loss
         else:
             raise
 
@@ -158,6 +168,11 @@ def get_plotting_func(dataset_name='VariedRotatingDigits'):
         return partial(plot_results, is_2d=True, is_grey=True, img_label=False)
     elif 'ColoredBouncingBallsStacked' in dataset_name:
         return partial(plot_results, is_2d=True, is_grey=False, img_label=True, is_stack=True)
+    elif 'FrequencyChangingSines' in dataset_name:
+        if 'FrequencyChangingSinesSummedMultiple' in dataset_name:
+            return partial(plot_results_1d, include_first_in_target=True, include_multiple=True)
+        else:
+            return partial(plot_results_1d, include_first_in_target=True, include_multiple=False)
     else:
         raise NotImplementedError()
 
@@ -409,6 +424,135 @@ def collapse_pixel_needle(input_x, input_y, has_batch_first=False):
                 exp_input_x[t, 1, dis_loc[0], dis_loc[1]] = input_y[t, int(m*3+1), 1, 1]
                 exp_input_x[t, 2, dis_loc[0], dis_loc[1]] = input_y[t, int(m*3+2), 1, 1]
         return exp_input_x
+
+def plot_results_1d(pred, trgt, input_y, input_x, idx, path, has_batch_first=False, save=True, sigmoid=False, include_first_in_target=True, include_multiple=True, switch_index=None):
+    """
+    plot results for 1d datasets,
+      take everything normalized as numpy
+    """
+    if has_batch_first:
+        if include_multiple:
+            if input_y.shape[-1] == 5:
+                pass
+            else:
+                assert input_y.shape[-1] == 1 or input_y.shape[-1] == 6
+                # params={'figure.figsize':(7,11), 'axes.titlesize':8, 'axes.titleweight':'bold'}
+                import matplotlib as mpl
+                # params={'figure.figsize':(7,11)}
+                params={'figure.figsize':(7,11), 'axes.titlesize':8, 'axes.titleweight':'bold'}
+                mpl.rcParams.update(params)
+                
+                for i in range(input_y.shape[0]):
+                    ax=plt.subplot2grid((input_y.shape[0], 1), (i, 0))
+                    if not (switch_index == None):
+                        if switch_index[i]:
+                            plt.setp(ax.spines.values(), color='green')
+                        # else:
+                        #     plt.setp(ax.spines.values(), color='yellow')
+                    ax.plot(np.arange(1,input_y.shape[1]+1), input_y[i,:,0], 'k-', label='Input_Y')
+                    if include_first_in_target:
+                        ax.plot(np.arange(input_y.shape[1], input_y.shape[1]+trgt.shape[1]), trgt[i].reshape(-1), 'r-', label='Target')
+                        ax.plot(np.arange(input_y.shape[1], input_y.shape[1]+pred.shape[1]), pred[i].reshape(-1), 'b-', label='Predicted')
+                    # pad = trgt.shape[0] - 1
+                    else:
+                        ax.plot(np.arange(input_y.shape[1]+1, input_y.shape[1]+1+trgt.shape[1]), trgt[i].reshape(-1), 'r-', label='Target')
+                        ax.plot(np.arange(input_y.shape[1]+1, input_y.shape[1]+1+pred.shape[1]), pred[i].reshape(-1), 'b-', label='Predicted')
+                    # pad = trgt.shape[0]
+                    if i < (input_y.shape[0]-1):
+                        ax.tick_params(axis='x', labelbottom=False)
+                    if i == 0:
+                        plt.legend(bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3, frameon=False)
+
+        
+        plt.tight_layout()
+        # plt.axis('off')
+        plt.grid(False)
+
+        if save:
+            if not os.path.exists(path):
+                os.makedirs(path)
+            plt.savefig(os.path.join(path, f'batch_epoch{idx}.png'))
+        plt.clf()
+        plt.close()
+
+
+
+    else:
+        if include_multiple:
+            if input_y.shape[-1] == 5:
+                fig=plt.figure(figsize=(8,8))
+                ax1 = fig.add_subplot(611)
+                ax2 = fig.add_subplot(612)
+                ax3 = fig.add_subplot(613)
+                ax4 = fig.add_subplot(614)
+                ax5 = fig.add_subplot(615)
+                ax6 = fig.add_subplot(616)
+                ax1.plot(np.arange(1,input_y.shape[0]+1), np.mean(input_y[:,:5], axis=-1), 'k-', label='Input_Y (avg)')
+                if include_first_in_target:
+                    ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                    ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+                    pad = trgt.shape[0] - 1
+                else:
+                    ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                    ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+                    pad = trgt.shape[0]
+                ax1.legend()
+                ax2.plot(np.arange(1,input_y.shape[0]+1), input_y[:,0], 'k-', label='Input_Y (1st component)')
+                ax2.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pad), np.zeros(pad), 'w.')
+                ax2.legend()
+                ax3.plot(np.arange(1,input_y.shape[0]+1), input_y[:,1], 'k-', label='Input_Y (2nd component)')
+                ax3.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pad), np.zeros(pad), 'w.')
+                ax3.legend()
+                ax4.plot(np.arange(1,input_y.shape[0]+1), input_y[:,2], 'k-', label='Input_Y (3rd component)')
+                ax4.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pad), np.zeros(pad), 'w.')
+                ax4.legend()
+                ax5.plot(np.arange(1,input_y.shape[0]+1), input_y[:,3], 'k-', label='Input_Y (4th component)')
+                ax5.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pad), np.zeros(pad), 'w.')
+                ax5.legend()
+                ax6.plot(np.arange(1,input_y.shape[0]+1), input_y[:,4], 'k-', label='Input_Y (5th component)')
+                ax6.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pad), np.zeros(pad), 'w.')
+                ax6.legend()
+            else:
+                assert input_y.shape[-1] == 1 or input_y.shape[-1] == 6
+                fig=plt.figure(figsize=(8,4))
+                ax1 = fig.add_subplot(111)
+                ax1.plot(np.arange(1,input_y.shape[0]+1), input_y[:,0], 'k-', label='Input_Y')
+                if include_first_in_target:
+                    ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                    ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+                    # pad = trgt.shape[0] - 1
+                else:
+                    ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                    ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+                    # pad = trgt.shape[0]
+                plt.legend(bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3, frameon=False)
+                # plt.ylabel('time steps / 0.05 second')
+
+        else:
+            fig=plt.figure(figsize=(8,8))
+            ax1 = fig.add_subplot(111)
+        # ax1.set_title('Predicted')
+        # ax1.axis('off')
+    
+            ax1.plot(np.arange(1, input_y.shape[0]+1), input_y[:,0].reshape(-1), 'k-', label='Input_Y')
+            if include_first_in_target:
+                ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                ax1.plot(np.arange(input_y.shape[0], input_y.shape[0]+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+            else:
+                ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+trgt.shape[0]), trgt.reshape(-1), 'r-', label='Target')
+                ax1.plot(np.arange(input_y.shape[0]+1, input_y.shape[0]+1+pred.shape[0]), pred.reshape(-1), 'b-', label='Predicted')
+            ax1.legend()
+    
+        # plt.tight_layout()
+        # plt.axis('off')
+        plt.grid(False)
+
+        if save:
+            if not os.path.exists(path):
+                os.makedirs(path)
+            plt.savefig(os.path.join(path, f'epoch{idx}.png'))
+        plt.clf()
+        plt.close()
 
 def str2bool(v):
     if isinstance(v, bool):

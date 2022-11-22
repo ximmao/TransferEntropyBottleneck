@@ -48,7 +48,10 @@ def main_TE(args, train_loader=None, val_loader=None):
     Y_module.apply(init_weight)
 
     if args.Y_checkpoint > 0:
-        model_path = f'{args.log_dir}/{args.exp_name}/Y_module_{args.Y_checkpoint}.ckpt'
+        if args.Y_checkpoint_foldername:
+            model_path = f'{args.log_dir}/{args.Y_checkpoint_foldername}/Y_module_{args.Y_checkpoint}.ckpt'
+        else:
+            model_path = f'{args.log_dir}/{args.exp_name}/Y_module_{args.Y_checkpoint}.ckpt'
         Y_module.load_state_dict(torch.load(model_path,map_location=args.device))
         print(f'Resume from Y checkpoint epoch {args.Y_checkpoint}')
         Y_module_at_train = args.Y_continuetrain
@@ -134,6 +137,9 @@ def test_TE(args, data_loader, model, plot_results=None, color_clf=None, split='
             images_hist = images_hist.to(device=args.device,dtype=torch.float)
             if args.dataset_name == 'ColoredBouncingBallsStackedOnlinegen':
                 labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,c,h,w
+            # elif args.dataset_name == 'FrequencyChangingSinesOnlinegen' or args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+            elif args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+                labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,1
             else:
                 labels_trgt = labels_trgt.to(device=args.device,dtype=torch.long)
             labels_hist = labels_trgt[:,:images_hist.shape[1]]
@@ -148,6 +154,8 @@ def test_TE(args, data_loader, model, plot_results=None, color_clf=None, split='
             
             if args.output_categorical:
                 reconstructionloss,loglikelyhood = args.criterion(pred,labels_trgt[:,0])
+            elif args.output_seq_scalar:
+                reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt)
             else:
                 reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
             
@@ -160,6 +168,8 @@ def test_TE(args, data_loader, model, plot_results=None, color_clf=None, split='
             if args.Y_continuetrain:
                 if args.output_categorical:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+                elif args.output_seq_scalar:
+                    y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
                 else:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
                 
@@ -171,6 +181,8 @@ def test_TE(args, data_loader, model, plot_results=None, color_clf=None, split='
             if not args.Y_continuetrain:
                 if args.output_categorical:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+                elif args.output_seq_scalar:
+                    y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
                 else:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
                 
@@ -305,6 +317,11 @@ if __name__ == '__main__':
         default=-1,
         help = 'epoch to load the Y module and optimizer from, and start at this epoch if training Y')
     parser.add_argument(
+        '--Y_checkpoint_foldername',
+        type=str,
+        default='',
+        help = 'folder to load Y module from, if empty string then uses same folder as TE')
+    parser.add_argument(
         '--TE_checkpoint',
         type=int,
         default=-1,
@@ -321,6 +338,8 @@ if __name__ == '__main__':
     
     if args.output_categorical:
         args.criterion = TargetLoss(output_type = 'categorical',domain_shape=args.TE_module_args_dict['X_module_args_dict']['input_dim'],presumed_variance=args.presumed_output_variance)
+    elif args.output_seq_scalar:
+        args.criterion = TargetLoss(output_type = args.loss_type,domain_shape=args.signal_shape,presumed_variance=args.presumed_output_variance)
     else:
         args.criterion = TargetLoss(output_type = args.loss_type,domain_shape=args.image_shape,presumed_variance=args.presumed_output_variance)
     if args.loss_type == 'binary':
@@ -328,10 +347,12 @@ if __name__ == '__main__':
     else:
         args.plot_sigmoid = False
     
-    if not args.output_categorical:
-        args.normalizing_factor_loglikelihood = np.prod(args.image_shape)
-    else:
+    if args.output_categorical:
         args.normalizing_factor_loglikelihood = 1
+    elif args.output_seq_scalar:
+        args.normalizing_factor_loglikelihood = np.prod(args.signal_shape)
+    else:
+        args.normalizing_factor_loglikelihood = np.prod(args.image_shape)
     args.kappa_Y = args.normalizing_factor_loglikelihood*args.beta_Y
     args.kappa = args.normalizing_factor_loglikelihood*args.beta_TE
     
