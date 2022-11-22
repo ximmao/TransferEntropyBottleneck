@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from typing import Type, Any, Callable, Union, List, Optional
 from typing_extensions import Literal
-from TE.utils import onehot
+# from TE.utils import onehot
 
 class TEModel(nn.Module):
     """
@@ -19,7 +19,8 @@ class TEModel(nn.Module):
                 Y_module_args_dict = {'nc':3, 'ndf':64, 'latent_dim':32, 'output_dim':(32, 32),'oc':3, 'dec_multiplier':(2, 2), 'dec_pad':(0,0), 'dec_out_act':'none', 'encoder_type': 'lstm_resnet18_2d','is_2d':True,'output_categorical': False,'teb0_nocontext_mlp_conditionals':False},
                 X_module_args_dict = {'input_dim':8, 'ndf':64, 'latent_dim':32, 'output_dim':(32, 32),'oc':3, 'dec_multiplier':(2, 2), 'dec_pad':(0,0), 'dec_out_act':'none', 'latent_type':'concat','sample_c': True, 'encoder_type':'lstm_resnet18_2d','is_2d':True,'mlp_conditionals':False, 'output_categorical': False,'teb0_nocontext_mlp_conditionals':False},
                 Y_module: Optional[Type[Union[ VAEModel, VAEModel_BE]]] = None, 
-                share_dec: int = 0, x_init_variance=.0000001, x_init_mean_zero = True, output_categorical = False, teb0_nocontext_mlp_conditionals=False, **kwargs):
+                share_dec: int = 0, x_init_variance=.0000001, x_init_mean_zero = True, output_categorical = False, teb0_nocontext_mlp_conditionals=False, 
+                **kwargs):
         super().__init__()
         # overwrite the dict of items for Y module and X module.
         argdict = dict(locals(),**kwargs)
@@ -68,31 +69,41 @@ class TEModel(nn.Module):
                         self.X_module.encoder_mlp.l2.bias[:size_mean] = 0.
                         self.X_module.encoder_mlp.l2.weight[:,:] = 0.
                 else:
-                    if self.X_module.encoder_type == 'lstm_resnet18_2d':
+                    if 'lstm' in self.X_module.encoder_type:
                         self.X_module.encoder.proj.bias[size_mean:] = logvar
                         if x_init_mean_zero:
                             self.X_module.encoder.proj.bias[:size_mean] = 0.
                             self.X_module.encoder.proj.weight[:,:] = 0.
+                    # if self.X_module.encoder_type == 'lstm_resnet18_2d':
+                    #     self.X_module.encoder.proj.bias[size_mean:] = logvar
+                    #     if x_init_mean_zero:
+                    #         self.X_module.encoder.proj.bias[:size_mean] = 0.
+                    #         self.X_module.encoder.proj.weight[:,:] = 0.
                     elif self.X_module.encoder_type == 'resnet18_2d':
                         self.X_module.encoder.fc.bias[size_mean:] = logvar
                         if x_init_mean_zero:
                             self.X_module.encoder.fc.bias[:size_mean] = 0.
                             self.X_module.encoder.fc.weight[:,:] = 0.
-                    elif self.X_module.encoder_type == 'lstm_resnet34_2d':
-                        self.X_module.encoder.proj.bias[size_mean:] = logvar
-                        if x_init_mean_zero:
-                            self.X_module.encoder.proj.bias[:size_mean] = 0.
-                            self.X_module.encoder.proj.weight[:,:] = 0.
+                    # elif self.X_module.encoder_type == 'lstm_resnet34_2d':
+                    #     self.X_module.encoder.proj.bias[size_mean:] = logvar
+                    #     if x_init_mean_zero:
+                    #         self.X_module.encoder.proj.bias[:size_mean] = 0.
+                    #         self.X_module.encoder.proj.weight[:,:] = 0.
                     elif self.X_module.encoder_type == 'resnet34_2d':
                         self.X_module.encoder.fc.bias[size_mean:] = logvar
                         if x_init_mean_zero:
                             self.X_module.encoder.fc.bias[:size_mean] = 0.
                             self.X_module.encoder.fc.weight[:,:] = 0.
-                    elif self.X_module.encoder_type == 'lstm_embed':
-                        self.X_module.encoder.proj.bias[size_mean:] = logvar 
-                        if x_init_mean_zero:
-                            self.X_module.encoder.proj.bias[:size_mean] = 0.
-                            self.X_module.encoder.proj.weight[:,:] = 0.
+                    # elif self.X_module.encoder_type == 'lstm_embed':
+                    #     self.X_module.encoder.proj.bias[size_mean:] = logvar 
+                    #     if x_init_mean_zero:
+                    #         self.X_module.encoder.proj.bias[:size_mean] = 0.
+                    #         self.X_module.encoder.proj.weight[:,:] = 0.
+                    # elif self.X_module.encoder_type == 'lstm_scalar':
+                    #     self.X_module.encoder.proj.bias[size_mean:] = logvar 
+                    #     if x_init_mean_zero:
+                    #         self.X_module.encoder.proj.bias[:size_mean] = 0.
+                    #         self.X_module.encoder.proj.weight[:,:] = 0.
                     elif self.X_module.encoder_type == 'embed':
                         self.X_module.encoder[-1].l2.bias[size_mean:] = logvar
                         if x_init_mean_zero:

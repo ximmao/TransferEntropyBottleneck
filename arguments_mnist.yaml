@@ -15,7 +15,6 @@ general_config:
   beta_Y: 1. # hyperparameter for loss trading of KL term. Y model
   # hyperparameter for loss trading of KL term. TE model. If beta is a list of length 2 and annealing is on, it interprets the first one as starting value, and second as end value
   beta_TE: .2
-
   presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
   loss_type: gaussian # list with entry for each output channel. See TargetLoss class for documentation.
   true_latent_loss: true # this replaced the kl divergence to the Y modules computed latent. This is only valid when the latent probability space is shared between the Y module and TE model
@@ -23,6 +22,8 @@ general_config:
   deterministic_baseline: False
   color_clf: False
   teb0_nocontext_mlp_conditionals: False
+  use_neural_ode: False
+  output_seq_scalar: False
   # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
 
 model_config:

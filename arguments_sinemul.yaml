@@ -1,0 +1,62 @@
+general_config:
+  exp_name: sine_multiple
+  lr: .0001
+  weight_decay: 0.0
+  checkpoint_frequency: 5
+  validation_frequency: 2
+  plot_per_update_train: 10
+  plot_per_update_val: 5
+  batch_size:
+    train: 128
+    test: 1
+
+  # regarding loss_func
+  annealbeta: none # set beta_TE to decay from set multiple of beta_TE to beta_TE during training. can be set to "baclwards_<method>" to make beta increase.
+  beta_Y: 1. # hyperparameter for loss trading of KL term. Y model
+  beta_TE: 1000.
+  presumed_output_variance: 0.1 # mathematical interpretation for the output is gaussian of mean output, with fixed variance presumed_output_variance
+  loss_type: gaussian # list with entry for each output channel. See TargetLoss class for documentation.
+  true_latent_loss: true # this replaced the kl divergence to the Y modules computed latent. This is only valid when the latent probability space is shared between the Y module and TE model
+  output_categorical: False # turns X module into classifier and Y module into class embedding
+  deterministic_baseline: False
+  color_clf: False
+  teb0_nocontext_mlp_conditionals: True
+  use_neural_ode: True
+  output_seq_scalar: True
+  # loss_type choices =  ['mse','binary','gaussian','l1','laplace']
+
+model_config:
+  TE_model_exclu:
+    latent_dim: 128
+    share_dec: 0 # 0 if we dont do any sharing, 1 if we initialize the decoder to be the Y one, 2 if we take the Y decoder and do not train it
+    x_init_variance: .0000001
+    dec_out_act: none
+  X_module_type: CVAEModel
+  X_module_args:
+    ndf: 64
+    dec_out_act: none
+    latent_type: add # sets how the c and z|x are combined to the latent for the TE model
+    mlp_conditionals: True # conditions the X_module encoder with an mlp taking c also as input
+    sample_c: false # whether the TE models uses the mean and variance of c, or just sampled c
+    dec_fs: 20
+  Y_module_type: VAEModel_BE
+  Y_module_args:
+    ndf: 64
+    dec_out_act: none
+    dec_fs: 20
+
+dataset_config:
+  dataset_class: FrequencyChangingSinesSummedMultiple
+  yp_window_len: 20
+  y_window_len: 100
+  x_window_len: 100
+  num_dataset: 30000
+  output_mean: True
+  input_mean: True
+  label_noise: 0.15
+  baseline_train: False
+  data_path:
+    train: ./dataset/data/fwaves_data_switch_0p5_multi/train
+    valid: ./dataset/data/fwaves_data_switch_0p5_multi/valid
+    test: ./dataset/data/fwaves_data_switch_0p5_multi/test
+

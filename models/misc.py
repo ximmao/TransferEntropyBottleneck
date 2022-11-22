@@ -136,6 +136,8 @@ class LSTM_Encoder(nn.Module):
             self.enc,_ = select_resnet(emb_type, input_size, nc = emb_inputchannels)
         elif emb_type == 'embed':
             self.enc = nn.Sequential(nn.Embedding(emb_inputchannels,hidden_size),MLP(hidden_size,hidden_size,input_size))
+        elif emb_type == 'identity':
+            self.enc = nn.Identity()
     
     def forward(self, x):
         if self.is_2d:
@@ -145,7 +147,7 @@ class LSTM_Encoder(nn.Module):
             x = x.reshape(batch_size*seq_len, ch, res, res)
         else:
             batch_size, seq_len, dim = x.size()
-            x = x.view(batch_size*seq_len, dim)
+            x = x.reshape(batch_size*seq_len, dim)
             if self.emb_type == 'embed':
                 x = x.squeeze(-1)
             
@@ -176,11 +178,11 @@ class VectorField(nn.Module):
     def __init__(self, latent_dim, hidden_dim=50):
         super().__init__()
         self.model = nn.Sequential(
-                      nn.Linear(atent_dim, hidden_dim),
+                      nn.Linear(latent_dim, hidden_dim),
                       nn.ELU(),
                       nn.Linear(hidden_dim, hidden_dim),
                       nn.ELU(),
-                      nn.Linear(hidden_dim, atent_dim))
+                      nn.Linear(hidden_dim, latent_dim))
 
     def forward(self, t, x):
         return self.model(x)

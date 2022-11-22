@@ -31,6 +31,10 @@ def getStructuredArgs(yaml_file, argparse_args):
         custArgs.dataset_class = ColoredBouncingBallsStackedOnlinegen
     elif dset_yaml['dataset_class'] == 'VariedRotatingDigitsOnlinegen':
         custArgs.dataset_class = VariedRotatingDigitsOnlinegen
+    # elif dset_yaml['dataset_class'] == 'FrequencyChangingSinesOnlinegen':
+    #     custArgs.dataset_class = FrequencyChangingSinesOnlinegen
+    elif dset_yaml['dataset_class'] == 'FrequencyChangingSinesSummedMultiple':
+        custArgs.dataset_class = FrequencyChangingSinesSummedMultiple
     else:
         raise ValueError()
     custArgs.dataset_name = dset_yaml['dataset_class']
@@ -69,6 +73,8 @@ def getStructuredArgs(yaml_file, argparse_args):
         d_validset_argu['directory'] = dset_yaml['data_path']['valid']
     del d_validset_argu['dataset_class']
     d_validset_argu['split_name'] = 'valid'
+    if 'FrequencyChangingSines' in custArgs.dataset_name:
+        d_validset_argu['num_dataset'] = int(d_validset_argu['num_dataset'] // 6)
     custArgs.validset_argu = d_validset_argu
 
     d_testset_argu = copy.deepcopy(dset_yaml)
@@ -77,6 +83,8 @@ def getStructuredArgs(yaml_file, argparse_args):
         d_testset_argu['directory'] = dset_yaml['data_path']['test']
     del d_testset_argu['dataset_class']
     d_testset_argu['split_name'] = 'test'
+    if 'FrequencyChangingSines' in custArgs.dataset_name:
+        d_testset_argu['num_dataset'] = int(d_testset_argu['num_dataset'] // 6)
     custArgs.testset_argu = d_testset_argu
 
     # model configs
@@ -100,6 +108,49 @@ def getStructuredArgs(yaml_file, argparse_args):
         d_y_module_argu.update({'is_2d':True,'nc': new_nc_y, 'output_res' : 32, 'oc' : 3, 'encoder_type' : 'lstm_resnet18_2d'})
         d_x_module_argu.update({'is_2d':True,'input_dim': new_nc_x, 'output_res' : 32, 'oc' : 3,
          'encoder_type' : 'lstm_resnet18_2d',})
+    # elif dset_yaml['dataset_class'] == 'FrequencyChangingSinesOnlinegen':
+    #     y_input_dim = 1
+    #     if 'baseline_train' in dset_yaml:
+    #         if dset_yaml['baseline_train']:
+    #             y_input_dim = 2
+    #     d_y_module_argu.update({'is_2d':False,'nc': 1, 'seq_len_out' : dset_yaml['yp_window_len'], 'oc' : 1, 
+    #      'encoder_type' : 'lstm_scalar', 'y_input_dim': y_input_dim})
+    #     d_x_module_argu.update({'is_2d':False,'input_dim': 1, 'seq_len_out' : dset_yaml['yp_window_len'], 'oc' : 1,
+    #      'encoder_type' : 'lstm_scalar'})
+    #     d_y_module_argu.update({'include_first_in_target':True}) # force this mode
+    #     d_x_module_argu.update({'include_first_in_target':True}) 
+    #     # d_y_module_argu.update({'include_first_in_target':False})
+    #     # d_x_module_argu.update({'include_first_in_target':False})
+    #     # if 'include_first_in_target' in dset_yaml:
+    #     #     if dset_yaml['include_first_in_target'] == True:
+    #     #         d_y_module_argu.update({'include_first_in_target':True})
+    #     #         d_x_module_argu.update({'include_first_in_target':True})
+    elif dset_yaml['dataset_class'] == 'FrequencyChangingSinesSummedMultiple':
+        if dset_yaml['input_mean']:
+            y_input_dim = 1
+        else:
+            y_input_dim = 5
+        if 'baseline_train' in dset_yaml:
+            if dset_yaml['baseline_train']:
+                if dset_yaml['input_mean']:
+                    y_input_dim = 6
+                else:
+                    y_input_dim = 10
+        if dset_yaml['output_mean']:
+            y_oc = 1
+        else:
+            y_oc = 5
+        if 'x_input_dim' in d_x_module_argu: # for label cropping only
+            x_input_dim = d_x_module_argu['x_input_dim']
+            del d_x_module_argu['x_input_dim']
+        else:
+            x_input_dim = 5
+        d_y_module_argu.update({'is_2d':False,'nc': 1, 'seq_len_out' : dset_yaml['yp_window_len'], 'oc' : y_oc, 
+         'encoder_type' : 'lstm_scalar', 'y_input_dim': y_input_dim})
+        d_x_module_argu.update({'is_2d':False,'input_dim': x_input_dim, 'seq_len_out' : dset_yaml['yp_window_len'], 'oc' : y_oc,
+         'encoder_type' : 'lstm_scalar'})
+        d_y_module_argu.update({'include_first_in_target':True}) # force this mode
+        d_x_module_argu.update({'include_first_in_target':True}) 
     else:
         raise ValueError()
 
@@ -114,12 +165,28 @@ def getStructuredArgs(yaml_file, argparse_args):
     mod_yaml['TE_model_exclu'].update({'teb0_nocontext_mlp_conditionals':gen_yaml['teb0_nocontext_mlp_conditionals']})
     d_x_module_argu.update({'teb0_nocontext_mlp_conditionals':gen_yaml['teb0_nocontext_mlp_conditionals']})
     d_y_module_argu.update({'teb0_nocontext_mlp_conditionals':gen_yaml['teb0_nocontext_mlp_conditionals']})
+    
+    mod_yaml['TE_model_exclu'].update({'use_neural_ode':gen_yaml['use_neural_ode']})
+    d_x_module_argu.update({'use_neural_ode':gen_yaml['use_neural_ode']})
+    d_y_module_argu.update({'use_neural_ode':gen_yaml['use_neural_ode']})
+    
+    mod_yaml['TE_model_exclu'].update({'output_seq_scalar':gen_yaml['output_seq_scalar']})
+    d_x_module_argu.update({'output_seq_scalar':gen_yaml['output_seq_scalar']})
+    d_y_module_argu.update({'output_seq_scalar':gen_yaml['output_seq_scalar']})
+
 
     if d_y_module_argu['is_2d'] == True:
         res = d_y_module_argu['output_res'] 
         d_y_module_argu['output_dim'] = (res, res)
         del d_y_module_argu['output_res']
         custArgs.image_shape = (d_y_module_argu['oc'], res, res)
+    elif d_y_module_argu['output_seq_scalar'] == True:
+        if d_y_module_argu['include_first_in_target']:
+            custArgs.seq_length = dset_yaml['yp_window_len']+1
+            custArgs.signal_shape = (dset_yaml['yp_window_len']+1, d_y_module_argu['oc'])
+        else:
+            custArgs.seq_length = dset_yaml['yp_window_len']
+            custArgs.signal_shape = (dset_yaml['yp_window_len'], d_y_module_argu['oc'])
     else:
         custArgs.image_shape = (1, res)
 
@@ -128,7 +195,7 @@ def getStructuredArgs(yaml_file, argparse_args):
     d_y_module_argu['dec_pad']=(0,0)
     custArgs.Y_module_args_dict = d_y_module_argu
 
-    d_x_module_argu = mod_yaml['X_module_args']
+    # d_x_module_argu = mod_yaml['X_module_args']
     if d_x_module_argu['is_2d'] == True:
         res = d_x_module_argu['output_res'] 
         d_x_module_argu['output_dim'] = (res, res)

@@ -104,7 +104,7 @@ def main_TE(args, train_loader=None, val_loader=None):
     val_loader = DataLoader(valid_dset, batch_size=args.train_batch_size, shuffle=True, drop_last=True)
     
     # create plot function
-    plot_results = get_plotting_func(args.dataset_name)
+    plot_results = get_plotting_func(args.dataset_name) # TODO be compatible with new dataset
     
     print(time.time())
     best_val = float('inf')
@@ -208,7 +208,7 @@ def main_Y(args):
     val_loader = DataLoader(valid_dset, batch_size=args.train_batch_size, shuffle=True, drop_last=True)
     
     # create plot function
-    plot_results = get_plotting_func(args.dataset_name)
+    plot_results = get_plotting_func(args.dataset_name) # TODO
     
     print(time.time())
     best_val = float('inf')
@@ -266,10 +266,13 @@ def train_TE(args, data_loader, model, optimizer, epoch, X_at_train=True, Y_at_t
         
         images_trgt, images_hist, labels_trgt = batch
 
-        images_trgt = images_trgt.to(device=args.device,dtype=torch.float) #B,seq_prediction,c,h,w
-        images_hist = images_hist.to(device=args.device,dtype=torch.float) #B,seq,c,h,w
+        images_trgt = images_trgt.to(device=args.device,dtype=torch.float) #B,seq_prediction,c,h,w or B,seq_p,1
+        images_hist = images_hist.to(device=args.device,dtype=torch.float) #B,seq,c,h,w or B,seq,1
         if args.dataset_name == 'ColoredBouncingBallsStackedOnlinegen':
             labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,c,h,w
+        # elif args.dataset_name == 'FrequencyChangingSinesOnlinegen' or args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+        elif args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+            labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,1
         else:
             labels_trgt = labels_trgt.to(device=args.device,dtype=torch.long) #B,seq + seq_prediction,c,h,w
         labels_hist = labels_trgt[:,:images_hist.shape[1]]
@@ -284,6 +287,8 @@ def train_TE(args, data_loader, model, optimizer, epoch, X_at_train=True, Y_at_t
 
         if args.output_categorical:
             reconstructionloss,loglikelyhood = args.criterion(pred,labels_trgt[:,0])
+        elif args.output_seq_scalar:
+            reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt)
         else:
             reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
             
@@ -296,6 +301,8 @@ def train_TE(args, data_loader, model, optimizer, epoch, X_at_train=True, Y_at_t
         if args.Y_continuetrain:
             if args.output_categorical:
                 y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+            elif args.output_seq_scalar:
+                y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
             else:
                 y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
                 
@@ -312,6 +319,8 @@ def train_TE(args, data_loader, model, optimizer, epoch, X_at_train=True, Y_at_t
             if not args.Y_continuetrain:
                 if args.output_categorical:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+                elif args.output_seq_scalar:
+                    y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
                 else:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
             
@@ -405,6 +414,9 @@ def validate_TE(args, data_loader, model, epoch, plot_results=None, color_clf=No
             images_hist = images_hist.to(device=args.device,dtype=torch.float)
             if args.dataset_name == 'ColoredBouncingBallsStackedOnlinegen':
                 labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,c,h,w
+            # elif args.dataset_name == 'FrequencyChangingSinesOnlinegen' or args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+            elif args.dataset_name == 'FrequencyChangingSinesSummedMultiple':
+                labels_trgt = labels_trgt.to(device=args.device,dtype=torch.float) #B,seq + seq_prediction,1
             else:
                 labels_trgt = labels_trgt.to(device=args.device,dtype=torch.long)
             labels_hist = labels_trgt[:,:images_hist.shape[1]]
@@ -420,6 +432,8 @@ def validate_TE(args, data_loader, model, epoch, plot_results=None, color_clf=No
             
             if args.output_categorical:
                 reconstructionloss,loglikelyhood = args.criterion(pred,labels_trgt[:,0])
+            elif args.output_seq_scalar:
+                reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt)
             else:
                 reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
             
@@ -432,6 +446,8 @@ def validate_TE(args, data_loader, model, epoch, plot_results=None, color_clf=No
             if args.Y_continuetrain:
                 if args.output_categorical:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+                elif args.output_seq_scalar:
+                    y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
                 else:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
                 
@@ -443,6 +459,8 @@ def validate_TE(args, data_loader, model, epoch, plot_results=None, color_clf=No
             if not args.Y_continuetrain:
                 if args.output_categorical:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,labels_trgt[:,0])
+                elif args.output_seq_scalar:
+                    y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred,images_trgt)
                 else:
                     y_reconstructionloss,y_loglikelyhood = args.criterion(y_pred, images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
                 
@@ -520,12 +538,15 @@ def train_Y(args, data_loader, model, optimizer, epoch, plot_results=None, color
     for batch_idx, batch in enumerate(data_loader):
 
         images_trgt, images_hist, labels_trgt = batch
+        # print(batch_idx)
+        # print(time.time())
         images_trgt = images_trgt.to(device=args.device,dtype=torch.float) #B,seq_prediction,c,h,w
         images_hist = images_hist.to(device=args.device,dtype=torch.float) #B,seq,c,h,w
         labels_trgt = labels_trgt.to(device=args.device,dtype=torch.long)
         labels_hist = labels_trgt[:,:images_hist.shape[1]]
         labels_trgt = labels_trgt[:,[images_hist.shape[1]-1]]
         model.zero_grad()
+        # print(images_trgt.size(), images_hist.size())
 
         if args.Y_module_type == VAEModel:
             _, pred, kl_div, _ = model(images_hist,deterministic=args.deterministic_baseline)
@@ -536,6 +557,8 @@ def train_Y(args, data_loader, model, optimizer, epoch, plot_results=None, color
                 _, pred, kl_div, _ = model(images_hist, images_trgt,deterministic=args.deterministic_baseline)
         if args.output_categorical:
             reconstructionloss,loglikelyhood = args.criterion(pred,labels_trgt[:,0])
+        elif args.output_seq_scalar:
+            reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt)
         else:
             reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
         
@@ -579,6 +602,8 @@ def train_Y(args, data_loader, model, optimizer, epoch, plot_results=None, color
                          images_hist.detach().cpu().numpy()[0], 
                          images_trgt.detach().cpu().numpy()[0], f'{epoch}_{batch_idx}', path=f'{args.log_dir}/{args.exp_name}/run_plots/Y_train_plots/',save=args.savefig,sigmoid=args.plot_sigmoid)
         
+        # print(time.time())
+
     if args.save:
         stats_dict = {'loss_all':loss_all,'loss_recon':loss_recon,'loss_recon_loglikelihood':loss_recon_loglikelihood,'loss_kldiv':loss_kldiv}
         if args.output_categorical:
@@ -621,6 +646,8 @@ def validate_Y(args, data_loader, model, epoch, plot_results=None, color_clf=Non
 
             if args.output_categorical:
                 reconstructionloss,loglikelyhood = args.criterion(pred,labels_trgt[:,0])
+            elif args.output_seq_scalar:
+                reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt)
             else:
                 reconstructionloss,loglikelyhood = args.criterion(pred,images_trgt.view(images_trgt.shape[0]*images_trgt.shape[1],*images_trgt.shape[2:]))
 
@@ -787,6 +814,8 @@ if __name__ == '__main__':
         args.y_stopgradient = False
     if args.output_categorical:
         args.criterion = TargetLoss(output_type = 'categorical',domain_shape=args.TE_module_args_dict['X_module_args_dict']['input_dim'],presumed_variance=args.presumed_output_variance)
+    elif args.output_seq_scalar:
+        args.criterion = TargetLoss(output_type = args.loss_type,domain_shape=args.signal_shape,presumed_variance=args.presumed_output_variance)
     else:
         args.criterion = TargetLoss(output_type = args.loss_type,domain_shape=args.image_shape,presumed_variance=args.presumed_output_variance)
     if args.loss_type == 'binary':
@@ -836,10 +865,14 @@ if __name__ == '__main__':
 
     #to standardize the above; beta is a tuneable parameter, the rest are computed:
     
-    if not args.output_categorical:
-        args.normalizing_factor_loglikelihood = np.prod(args.image_shape)
-    else:
+    if args.output_categorical:
         args.normalizing_factor_loglikelihood = 1
+    elif args.output_seq_scalar:
+        args.normalizing_factor_loglikelihood = np.prod(args.signal_shape)
+    else:
+        args.normalizing_factor_loglikelihood = np.prod(args.image_shape)
+    
+        
     args.kappa_Y = args.normalizing_factor_loglikelihood*args.beta_Y
     args.kappa = args.normalizing_factor_loglikelihood*args.beta_TE
     
