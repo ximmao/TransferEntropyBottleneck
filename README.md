@@ -2,7 +2,7 @@
 
 ### dependency
 
-Code is implemented with `python3.7` and `pytorch 1.8.1`, it also require torchvision for its pretrained network. To run 1d experiment, torchdiffeq is required. Please see the list of library dependencies:
+Code is implemented with `python3.7` and `pytorch 1.8.1`, it also require torchvision for its pretrained network. To run 1d time-series experiment, torchdiffeq is required. Please see the list of library dependencies:
 ```
 python=3.7
 torch==1.8.1
