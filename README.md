@@ -24,6 +24,7 @@ dataset
 |   dataset_base.py
 |   bouncing_balls_p.py
 |   rotating_digits.py
+|   changing_waves_m.py
 |
 └───data
 |   |
