@@ -7,7 +7,6 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib
 
-# angularVelo_mul = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 angularVelo_mul = [0.2, 0.4, 0.6, 0.8, 1.0]
 
 class TrueFunc(nn.Module):
@@ -27,7 +26,7 @@ def save_npy(cfilename, data):
 
 precompute_len_y = 100
 precompute_len_yp = 20
-switch = False
+switch = True
 # label_noise = True
 if not switch:
     switch_probability = 0.
@@ -35,12 +34,6 @@ if not switch:
 else:
     switch_probability = 0.5
     dump_dir='./data/fwaves_data_switch_0p5_multi/'
-# if not switch:
-#     switch_probability = 0.
-#     dump_dir='./data/fwaves_data_noswitch_harderXA/'
-# else:
-#     switch_probability = 0.5
-#     dump_dir='./data/fwaves_data_switch_0p5_harderXA/'
 num_dataset = {'train':30000, 'valid':5000, 'test':5000}
 dset = {'train':{'signal':np.zeros((num_dataset['train'], precompute_len_y+precompute_len_yp, len(angularVelo_mul))),
                  'label':np.zeros((num_dataset['train'], precompute_len_y+precompute_len_yp, len(angularVelo_mul)))}, 
