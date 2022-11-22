@@ -16,7 +16,7 @@ torchdiffeq
 
 ### dataset 
 
-Dataset __rotatingMNIST__, __needle in the haystack__ and __ multi-component sinusoids__ can be generated via scripts under /dataset/creation_scripts. Upon successful generation, they need to be put in `dataset/data`. You should expect to see the following dir tree
+Dataset __rotatingMNIST__, __needle in the haystack__ and __multi-component sinusoids__ can be generated via scripts under /dataset/creation_scripts. Upon successful generation, they need to be put in `dataset/data`. You should expect to see the following dir tree
 
 ```
 dataset
